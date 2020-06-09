@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[function() {  /* widget controller */  var c = this;}]]></client_script>
+        <controller_as>c</controller_as>
+        <css/>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>true</has_preview>
+        <id>subscription_previewer</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {  }]]></link>
+        <name>Subscription_Previewer</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function() {
+  /* populate the 'data' object */
+  /* e.g., data.table = $sp.getValue('table'); */
+	data.subscriptionNumer = $sp.getParameter('number') || '201100002';
+	
+	if(input) {
+		if(input.subscriptionNumber) {
+		data.subscriptionNumer = input.subscriptionNumber;
+		}
+	}
+	
+	//If there is no number found stop
+	if(!data.subscriptionNumer) {
+		return;
+	}
+	
+	data.headerTable = options.headerTable || 'SBS_HDR';
+	data.childTable = options.childTable || 'SBS_LINE';
+	data.headerFields = options.headerFields || 'SBS_HDR.SBS_NR,SBS_HDR.MAIN_SBSNR,SBS_HDR.SBS_DESC,SBS_HDR.RPL_DEL,SBS_HDR.EMP_NR,SBS_HDR.RPL_INV';
+	data.childFields = options.childFields || 'SBS_LINE.ORD_QTY,SBS_LINE.ART_CAMT,SBS_LINE.ART_CODE,SBS_LINE.ART_PX,SBS_LINE.REC_ID,SBS_LINE.ART_DESC1,SBS_LINE.ART_DAMT,SBS_LINE.VAT_AMT';
+
+	var fields = data.headerFields + ',' + data.childFields;
+	data.subscriptionData = getSubscription(data.subscriptionNumer, fields);
+
+	//data.subscriptionLines = 
+		
+	//Get the subscription data
+	function getSubscription(number, fields) {
+
+		try {
+			var r = new sn_ws.RESTMessageV2('global.AccountView', 'Get Abonnement Discount');
+
+			r.setStringParameterNoEscape('x-company', '7cf3c3af-9036-41ba-b9b0-09bd55989e59');
+
+			r.setQueryParameter('BusinessObject', 'SBS');
+			r.setQueryParameter('PageSize', '1');
+			r.setQueryParameter('Fields', fields);
+			r.setQueryParameter('FilterControlSource1', 'SBS_NR');
+			r.setQueryParameter('FilterOperator1', 'Equal');
+			r.setQueryParameter('FilterValueType1', 'C');
+			r.setQueryParameter('FilterValue1', number); // Abbo number
+			r.setQueryParameter('FilterIsListOfValues1', 'false');
+
+			var response = r.execute();
+			var responseBody = response.getBody();
+			var httpStatus = response.getStatusCode();
+
+			if(httpStatus == '200') {
+				var parsedBody = JSON.parse(responseBody)
+				return parsedBody;
+			} else {
+				return false;
+			}
+		}
+		catch(ex) {
+			var message = ex.message;
+			return message;
+		}
+	}
+})();]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>wybren.vanbeemdelust@bnc.nl</sys_created_by>
+        <sys_created_on>2019-11-15 20:01:17</sys_created_on>
+        <sys_customer_update>false</sys_customer_update>
+        <sys_id>f60239cfdb0d4810f7b4f7461d9619a3</sys_id>
+        <sys_mod_count>37</sys_mod_count>
+        <sys_name>Subscription_Previewer</sys_name>
+        <sys_package display_value="Abonnementen" source="x_bocn_abonnement">8cce6d8fdb0d4810f7b4f7461d96190b</sys_package>
+        <sys_policy/>
+        <sys_replace_on_upgrade>false</sys_replace_on_upgrade>
+        <sys_scope display_value="Abonnementen">8cce6d8fdb0d4810f7b4f7461d96190b</sys_scope>
+        <sys_update_name>sp_widget_f60239cfdb0d4810f7b4f7461d9619a3</sys_update_name>
+        <sys_updated_by>wybren.vanbeemdelust@bnc.nl</sys_updated_by>
+        <sys_updated_on>2019-11-15 21:26:56</sys_updated_on>
+        <template><![CDATA[<div ng-if="data.subscriptionNumber != ''" class="panel-body">
+  <div class="row">
+    <div ng-repeat="line in data.subscriptionData.SBS_LINE">
+      <br />
+      <div ng-repeat="item of line">
+        {{item}}
+      </div>
+      {{line}}
+      
+    </div>
+  </div>
+  
+</div>
+
+<div ng-if="!data.subscriptionNumber">
+<!-- your widget template -->
+</div>
+
+<pre>{{data|json}}</pre>]]></template>
+    </sp_widget>
+</record_update>
